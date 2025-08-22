@@ -1,0 +1,22 @@
+from picamera import PiCamera
+from time import sleep
+import datetime
+import os
+
+# Create directory if not exists
+video_folder = '/home/pi/videos'
+os.makedirs(video_folder, exist_ok=True)
+
+camera = PiCamera()
+camera.resolution = (1024, 768)  # Optional: Set resolution
+
+timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+video_path = "{}/video_{}.h264".format(video_folder, timestamp)  # .h264 is raw video format
+
+camera.start_preview()  # Optional: Shows camera preview
+camera.start_recording(video_path)
+sleep(10)  # Records for 10 seconds (change as needed)
+camera.stop_recording()
+camera.stop_preview()
+
+print("Video recorded and saved to {}".format(video_path))
