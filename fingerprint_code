@@ -1,0 +1,54 @@
+from pyfingerprint.pyfingerprint import PyFingerprint
+from time import sleep
+
+try:
+    f = PyFingerprint('/dev/ttyS0', 57600, 0xFFFFFFFF, 0x00000000)
+    if not f.verifyPassword():
+        raise ValueError('The given fingerprint sensor password is wrong!')
+except Exception as e:
+    print('Failed to initialize fingerprint sensor')
+    print('Exception message: ' + str(e))
+    exit(1)
+
+def enroll_fingerprint():
+    try:
+        print('Waiting for finger...')
+        while not f.readImage():
+            pass
+        f.convertImage(0x01)
+        result = f.searchTemplate()
+        if result[0] >= 0:
+            print('Fingerprint already exists.')
+            return
+        print('Remove finger...')
+        sleep(2)
+        print('Place the same finger again...')
+        while not f.readImage():
+            pass
+        f.convertImage(0x02)
+        if f.compareCharacteristics() == 0:
+            raise Exception('Fingers do not match')
+        f.createTemplate()
+        position = f.storeTemplate()
+        print('Fingerprint enrolled successfully at position #' + str(position))
+    except Exception as e:
+        print('Enrollment failed: ' + str(e))
+
+def authenticate_fingerprint():
+    try:
+        print('Waiting for finger...')
+        while not f.readImage():
+            pass
+        f.convertImage(0x01)
+        result = f.searchTemplate()
+        position = result[0]
+        if position == -1:
+            print('Access denied.')
+        else:
+            print('Access granted. Fingerprint #%d' % position)
+    except Exception as e:
+        print('Authentication failed: ' + str(e))
+
+if __name__ == '__main__':
+    # Use enroll_fingerprint() once to add fingerprints, then use authenticate_fingerprint()
+    authenticate_fingerprint()
