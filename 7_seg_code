@@ -1,0 +1,26 @@
+import tm1637
+from time import sleep
+
+try:
+    import thread
+except ImportError:
+    import _thread as thread
+
+# Initialize TM1637 display with CLK=GPIO21 and DIO=GPIO20, brightness from 0.0 to 1.0
+Display = tm1637.TM1637(clk=21, dio=20, brightness=1.0)
+
+try:
+    print("Starting clock in the background (press CTRL+C to stop):")
+    Display.StartClock(military_time=True)
+    Display.SetBrightness(1.0)
+
+    while True:
+        Display.ShowDoublepoint(True)
+        sleep(1)
+        Display.ShowDoublepoint(False)
+        sleep(1)
+
+except KeyboardInterrupt:
+    print("Properly closing the clock")
+    Display.StopClock()
+    Display.cleanup()
