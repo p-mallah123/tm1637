@@ -1,0 +1,21 @@
+from picamera import PiCamera
+import datetime
+import os
+
+# Create directory if not exists
+image_folder = '/home/pi/images'
+os.makedirs(image_folder, exist_ok=True)
+
+camera = PiCamera()
+camera.resolution = (1024, 768)  # Optional: Set resolution
+
+timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+#image_path = f"{image_folder}/image_{timestamp}.jpg"
+image_path = "{}/image_{}.jpg".format(image_folder, timestamp)
+
+camera.start_preview()  # Optional: Shows camera preview
+camera.capture(image_path)
+camera.stop_preview()
+
+#print(f"Image captured and saved to {image_path}")
+print("Image captured and saved to {}".format(image_path))
