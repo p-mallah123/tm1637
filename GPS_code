@@ -1,0 +1,42 @@
+import serial
+
+def parse_GPGGA(sentence):
+    try:
+        parts = sentence.split(',')
+        if parts[0] == "$GPGGA" and len(parts) > 5:
+            lat = parts[1]
+            lat_dir = parts[2]
+            lon = parts[3]
+            lon_dir = parts[4]
+            if lat and lon and lat_dir and lon_dir:
+                lat_deg = int(float(lat) / 100)
+                lat_min = float(lat) - lat_deg * 100
+                latitude = lat_deg + lat_min / 60
+                if lat_dir == 'S':
+                    latitude = -latitude
+                lon_deg = int(float(lon) / 100)
+                lon_min = float(lon) - lon_deg * 100
+                longitude = lon_deg + lon_min / 60
+                if lon_dir == 'W':
+                    longitude = -longitude
+                return latitude, longitude
+    except Exception:
+        pass
+    return None, None
+
+# Initialize serial connection here!
+ser = serial.Serial('/dev/ttyUSB0', baudrate=9600, timeout=1)
+
+while True:
+    line = ser.readline()
+    try:
+        line = line.decode('ascii', errors='replace')
+    except AttributeError:
+        pass
+    print("Received line:", line.strip())
+    if line.startswith('$GPGGA'):
+        lat, lon = parse_GPGGA(line)
+        if lat and lon:
+            print("Latitude: %.6f, Longitude: %.6f" % (lat, lon))
+        else:
+            print("Invalid or no GPS fix yet.")
