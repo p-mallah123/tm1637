@@ -1,0 +1,14 @@
+from RPLCD.i2c import CharLCD
+import time
+
+# Initialize the LCD, change the address if your I2C address is different
+lcd = CharLCD('PCF8574', 0x27, port=1, cols=16, rows=2)
+
+try:
+    lcd.write_string('Hello, World!')
+    time.sleep(2)
+    lcd.clear()
+    lcd.write_string('Raspberry Pi\nLCD Demo')
+    time.sleep(3)
+finally:
+    lcd.clear()
