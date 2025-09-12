@@ -1,0 +1,38 @@
+import time
+import matplotlib.pyplot as plt
+import Adafruit_ADS1x15
+
+adc = Adafruit_ADS1x15.ADS1115()
+GAIN = 1
+
+values = []
+max_points = 50
+
+plt.ion()
+fig, ax = plt.subplots()
+line, = ax.plot([], [], 'ro-')
+ax.set_ylim(-5000, 5000)
+ax.set_title('ADS1115 Oscilloscope')
+ax.set_ylabel('ADC Value')
+
+def update_plot():
+    line.set_data(range(len(values)), values)
+    ax.set_xlim(0, max_points)
+    fig.canvas.draw()
+    fig.canvas.flush_events()
+
+print('Starting ADS1115 readings on channel 0')
+
+try:
+    while True:
+        value = adc.read_adc(0, gain=GAIN)
+        print('ADC Value:', value)
+        values.append(value)
+        if len(values) > max_points:
+            values.pop(0)
+        update_plot()
+        time.sleep(0.1)
+except KeyboardInterrupt:
+    print('Exiting program')
+    plt.ioff()
+    plt.show()
