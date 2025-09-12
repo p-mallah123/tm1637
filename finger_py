@@ -1,0 +1,53 @@
+from pyfingerprint.pyfingerprint import PyFingerprint
+import time
+
+try:
+    f = PyFingerprint('/dev/ttyUSB0', 57600, 0xFFFFFFFF, 0x00000000)
+    if not f.verifyPassword():
+        raise ValueError('The given fingerprint sensor password is wrong!')
+except Exception as e:
+    print('Fingerprint sensor initialization failed:', e)
+    exit(1)
+
+def enroll():
+    print('Place finger to enroll...')
+    while f.readImage() == False:
+        pass
+    f.convertImage(0x01)
+    result = f.searchTemplate()
+    if result[0] >= 0:
+        print('Finger already enrolled at position #' + str(result[0]))
+        return
+    print('Remove finger...')
+    time.sleep(2)
+    print('Place same finger again...')
+    while f.readImage() == False:
+        pass
+    f.convertImage(0x02)
+    if f.compareCharacteristics() == 0:
+        print('Fingers do not match')
+        return
+    f.createTemplate()
+    position = f.storeTemplate()
+    print('Finger enrolled at position #' + str(position))
+
+def search():
+    print('Place finger to search...')
+    while f.readImage() == False:
+        pass
+    f.convertImage(0x01)
+    result = f.searchTemplate()
+    position = result[0]
+    if position >= 0:
+        print('Finger found at position #' + str(position))
+    else:
+        print('Finger not found')
+
+print('Choose e to enroll or s to search:')
+choice = input("> ").lower()
+if choice == 'e':
+    enroll()
+elif choice == 's':
+    search()
+else:
+    print('Invalid choice')
