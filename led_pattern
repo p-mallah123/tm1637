@@ -1,0 +1,31 @@
+# Import the necessary libraries
+import RPi.GPIO as GPIO
+import time
+# Set up GPIO using physical pin numbers
+GPIO.setmode(GPIO.BOARD)
+# List of GPIO pins where LEDs are connected
+led_pins = [29, 31, 33, 35, 37]
+# Set up each pin as an output and turn all LEDs off initially
+for pin in led_pins:
+    GPIO.setup(pin, GPIO.OUT)   # Set the pin as output
+    GPIO.output(pin, GPIO.LOW)  # Ensure LED is OFF at start
+
+# Define LED patterns: each sublist represents the ON/OFF state of all LEDs
+patterns = [
+    [1, 0, 0, 0, 0],  # Only first LED ON
+    [0, 1, 1, 1, 0],  # Middle three LEDs ON
+    [1, 1, 1, 1, 1],  # All LEDs ON
+    [0, 1, 0, 1, 0],  # Alternate LEDs ON
+    [0, 0, 1, 0, 0],  # Only center LED ON
+]
+try:
+    while True:  # Loop forever
+        for pattern in patterns:  # Go through each LED pattern
+            # Set each LED according to the current pattern
+            for pin, state in zip(led_pins, pattern):
+                GPIO.output(pin, GPIO.HIGH if state else GPIO.LOW)  # Turn LED ON or OFF
+            time.sleep(0.2)  # Wait 0.2 seconds before next pattern
+except KeyboardInterrupt:
+    print("Stopped by user.")  # Print message if program is stopped with Ctrl+C
+finally:
+    GPIO.cleanup()  # Reset all GPIO pins to a safe state
