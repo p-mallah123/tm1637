@@ -1,0 +1,34 @@
+import serial
+import time
+# Configure serial port (UART)
+ser = serial.Serial('/dev/serial0', 9600, timeout=1)
+# Replace with your card's actual ID after reading it once
+AUTHORIZED_CARD = "enter_your_card_no"  
+print("RFID Access System Ready")
+print("Tap your card...")
+
+try:
+    while True:
+        data = ser.read(12)  # EM-18 sends 12 characters per tag
+        if data:
+            card_id = data.decode('utf-8').strip()
+            print(f"Card Detected: {card_id}")
+
+            if card_id == AUTHORIZED_CARD:
+                print(" Access Granted — Hello!")
+            else:
+                print(" Access Denied — Nah!")
+            
+            time.sleep(1)  # Small delay before next read
+except KeyboardInterrupt:
+    print("\nExiting program...")
+finally:
+    ser.close()
+##To find your card_Id:
+import serial
+ser = serial.Serial('/dev/serial0', 9600, timeout=1)
+print("Scan your card...")
+while True:
+    data = ser.read(12)
+    if data:
+        print(data.decode('utf-8').strip())
