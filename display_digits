@@ -1,0 +1,31 @@
+#!/usr/bin/env python3
+from time import sleep
+import tm1637
+
+# Modern library (no sudo needed after pip3 install python-tm1637)
+display = tm1637.TM1637(clk=21, dio=20)
+
+try:
+    print("=== MODERN LIBRARY VERSION ===")
+    
+    # PART 1: 0-9 (single digits)
+    print("0 to 9:")
+    for digit in range(10):
+        display.number(digit)
+        print(f"  {digit}")
+        sleep(1)
+    
+    sleep(2)
+    
+    # PART 2: 00-99 (auto zero-padded)
+    print("00 to 99:")
+    for num in range(100):
+        display.number(num, zero_pad=True)
+        if num % 10 == 0:
+            print(f"  {num:02d}", end=' ')
+        sleep(0.5)
+
+except KeyboardInterrupt:
+    pass
+finally:
+    display.cleanup()
