@@ -1,31 +1,48 @@
 #!/usr/bin/env python3
 from time import sleep
-import tm1637
+import tm1637  # Your RPi.GPIO library
 
-# Modern library (no sudo needed after pip3 install python-tm1637)
-display = tm1637.TM1637(clk=21, dio=20)
+Display = tm1637.TM1637(CLK=21, DIO=20, brightness=1.0)
 
 try:
-    print("=== MODERN LIBRARY VERSION ===")
+    print("=== 7-SEGMENT DISPLAY PRACTICAL ===")
+    print("Part 1: Single digits 0-9")
+    print("Part 2: Two-digit numbers 00-99")
+    print("Press CTRL+C to stop...\n")
     
-    # PART 1: 0-9 (single digits)
+    # PART 1: Display single digits 0-9 (1 second each)
     print("0 to 9:")
     for digit in range(10):
-        display.number(digit)
-        print(f"  {digit}")
+        # Right-align single digit
+        segments = [0, 0, 0, Display.digit_to_segment[digit]]
+        Display.set_segments(segments)
+        print("  Display:    {}".format(digit))
         sleep(1)
     
     sleep(2)
     
-    # PART 2: 00-99 (auto zero-padded)
+    # PART 2: Display 00-99 (0.5 seconds each)
     print("00 to 99:")
     for num in range(100):
-        display.number(num, zero_pad=True)
-        if num % 10 == 0:
-            print(f"  {num:02d}", end=' ')
+        tens = num // 10
+        units = num % 10
+        
+        segments = [
+            Display.digit_to_segment[tens] if tens else 0,
+            Display.digit_to_segment[units],
+            0, 0
+        ]
+        Display.set_segments(segments)
+        
+        if num % 10 == 0:  # Print every 10 numbers
+            print("  {:02d}".format(num), end=' ')
         sleep(0.5)
+    
+    print("\n\nDemo complete!")
 
 except KeyboardInterrupt:
-    pass
+    print("\nStopped by user")
 finally:
-    display.cleanup()
+    Display.cleanup()
+    print("Display cleaned up")
+
