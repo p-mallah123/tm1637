@@ -2,9 +2,12 @@
 import subprocess
 from time import time, sleep, localtime
 from threading import Thread, Event
-from wiringpi2 import wiringPiSetupGpio, pinMode, digitalRead, digitalWrite, GPIO
+import RPi.GPIO as GPIO
 
-wiringPiSetupGpio()
+# RPi.GPIO setup
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
+
 CLK = 21
 DIO = 20
 
@@ -19,62 +22,71 @@ class TM1637:
     def __init__(self, CLK=21, DIO=20, brightness=1.0):
         self.clk = CLK
         self.dio = DIO
-        self.brightness = int(brightness * 7)  # Scale 0-1.0 to 0-7
+        self.brightness = int(brightness * 7)
         
-        pinMode(self.clk, GPIO.OUTPUT)
-        pinMode(self.dio, GPIO.OUTPUT)
-        digitalWrite(self.clk, GPIO.LOW)
-        digitalWrite(self.dio, GPIO.LOW)
+        # RPi.GPIO pin setup (replaces wiringpi2)
+        GPIO.setup(self.clk, GPIO.OUT)
+        GPIO.setup(self.dio, GPIO.OUT)
+        GPIO.output(self.clk, GPIO.LOW)
+        GPIO.output(self.dio, GPIO.LOW)
+        
         self._clock_thread = None
         self._clock_running = Event()
         self.military_time = True
+        self._show_colon = True
 
     def bit_delay(self):
         sleep(0.001)
 
     def start(self):
-        pinMode(self.dio, GPIO.OUTPUT)
+        GPIO.setup(self.dio, GPIO.OUT)
         self.bit_delay()
 
     def stop(self):
-        pinMode(self.dio, GPIO.OUTPUT)
+        GPIO.setup(self.dio, GPIO.OUT)
         self.bit_delay()
-        pinMode(self.clk, GPIO.OUTPUT)
-        digitalWrite(self.clk, GPIO.HIGH)
+        GPIO.output(self.clk, GPIO.HIGH)
         self.bit_delay()
-        pinMode(self.dio, GPIO.INPUT)
+        GPIO.setup(self.dio, GPIO.IN)
         self.bit_delay()
 
     def write_byte(self, b):
         for i in range(8):
-            digitalWrite(self.clk, GPIO.LOW)
+            GPIO.output(self.clk, GPIO.LOW)
             self.bit_delay()
-            pinMode(self.dio, GPIO.OUTPUT if (b & 1) else GPIO.INPUT)
-            digitalWrite(self.dio, GPIO.HIGH if (b & 1) else GPIO.LOW)
+            
+            # RPi.GPIO equivalent of wiringpi2 logic
+            if b & 1:
+                GPIO.setup(self.dio, GPIO.OUT)
+                GPIO.output(self.dio, GPIO.HIGH)
+            else:
+                GPIO.setup(self.dio, GPIO.IN)
+            
             self.bit_delay()
-            digitalWrite(self.clk, GPIO.HIGH)
+            GPIO.output(self.clk, GPIO.HIGH)
             self.bit_delay()
             b >>= 1
         
-        digitalWrite(self.clk, GPIO.LOW)
+        GPIO.output(self.clk, GPIO.LOW)
         self.bit_delay()
-        digitalWrite(self.clk, GPIO.HIGH)
+        GPIO.output(self.clk, GPIO.HIGH)
         self.bit_delay()
 
     def set_segments(self, segments, pos=0):
         self.start()
         self.write_byte(self.I2C_COMM1)
         self.stop()
+        
         self.start()
         self.write_byte(self.I2C_COMM2 + pos)
         for seg in segments:
             self.write_byte(seg)
         self.stop()
+        
         self.start()
         self.write_byte(self.I2C_COMM3 + self.brightness)
         self.stop()
 
-    # NEW METHODS FOR YOUR SCRIPT
     def StartClock(self, military_time=True):
         """Start background clock thread"""
         self.military_time = military_time
@@ -104,22 +116,27 @@ class TM1637:
             d2 = self.digit_to_segment[t.tm_min // 10]
             d3 = self.digit_to_segment[t.tm_min % 10]
             
-            # Blink colon
-            if hasattr(self, '_show_colon') and self._show_colon:
+            # Blink colon based on ShowDoublepoint setting
+            if self._show_colon:
                 self.set_segments([d0, 0x80 + d1, d2, d3])  # Colon ON
-            else:
+                sleep(0.5)
                 self.set_segments([d0, d1, d2, d3])          # Colon OFF
-            sleep(0.5)
+                sleep(0.5)
+            else:
+                self.set_segments([d0, d1, d2, d3])
+                sleep(1)
 
     def cleanup(self):
         self.StopClock()
-        pinMode(self.clk, GPIO.INPUT)
-        pinMode(self.dio, GPIO.INPUT)
+        GPIO.cleanup([self.clk, self.dio])
 
-# Test functions remain the same
+# Test function
 def show_ip_address(tm):
-    ipaddr = subprocess.check_output("hostname -I", shell=True, timeout=1).strip().split(b".")[0]
-    tm.set_segments([tm.digit_to_segment[int(x) & 0xf] for x in ipaddr[:4]])
+    try:
+        ipaddr = subprocess.check_output("hostname -I", shell=True, timeout=1).strip().split(b".")[0]
+        tm.set_segments([tm.digit_to_segment[int(x) & 0xf] for x in ipaddr[:4]])
+    except:
+        pass
 
 if __name__ == "__main__":
     tm = TM1637(CLK, DIO)
