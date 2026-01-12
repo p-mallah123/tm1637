@@ -1,0 +1,16 @@
+import tm1637
+from time import sleep
+
+Display = tm1637.TM1637(CLK=21, DIO=20)
+Display.brightness(1)
+
+# Test 1: Show "8888"
+Display.write([127, 127, 127, 127])
+sleep(3)
+
+# Test 2: Show "0123" 
+Display.write([63, 6, 91, 79])
+sleep(3)
+
+# Test 3: Turn off
+Display.write([0, 0, 0, 0])
